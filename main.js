@@ -84,7 +84,7 @@ function process_wb(wb) {
 	var output = wb_data(wb),
 		to_sort = [],
 		activity_names = [],
-		limits = [30, 15, 30, 25, 15, 25],
+		limits = [30, 24, 32, 32, 25],
 		final_sort = [],
 		new_sheet_array = [];
 
@@ -143,7 +143,7 @@ function process_wb(wb) {
 			// console.log("Item:", item[0]);
 			// console.log("person:", person);
 
-			new_sheet_array.push([person["First Name"] + ' ' + person["Last Name"]]);
+			new_sheet_array.push([person["RC"], person["First Name"] + ' ' + person["Last Name"]]);
 
 		});
 
