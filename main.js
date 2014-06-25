@@ -159,7 +159,7 @@ function process_wb(wb) {
 		var fragment = document.createDocumentFragment(),
 			temp = document.createElement('div');
 
-		temp.innerHTML = '<div class="pure-control-group"><label for="activity">' + activity + '</label><input type="number" id="' + index + '" value="30"></div>';
+		temp.innerHTML = '<div class="pure-control-group"><label for="activity">' + activity + '</label><input type="number" id="' + index + '" value="30" min="1" onchange="count_spots()"></div>';
 
 		while (temp.firstChild) {
 			fragment.appendChild(temp.firstChild);
@@ -174,9 +174,6 @@ function process_wb(wb) {
 	});
 
 	count_spots();
-	Array.prototype.forEach.call(document.querySelectorAll('#info-area input'), function (elem) {
-		elem.addEventListener('onchange', count_spots);
-	});
 
 }
 
@@ -268,7 +265,7 @@ function make_wb() {
 		}
 		return buf;
 	}
-
+	
 	saveAs(
 		new Blob(
 				[s2ab(wbout)], {
@@ -276,7 +273,6 @@ function make_wb() {
 			}
 		),
 		"Sorted Activities.xlsx");
-
 }
 
 document.getElementById('save').addEventListener('click', make_wb);
