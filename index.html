@@ -3,15 +3,48 @@
 
 <head>
 	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Duke TIP Activity Automator</title>
 
+	<link rel="stylesheet" href="pure-min.5.0.css">
 	<link rel="stylesheet" href="main.css">
 </head>
 
 <body>
+	<div id="wrap" class="pure-g">
 
-	<div id="drop">Drag and Drop the spreadsheet here (in .xlsx format)</div>
+		<div id="drop" class="pure-u-1">
+			<h1>
+				Drag and Drop the spreadsheet here<br/>
+				<small>(in .xlsx format)</small>
+			</h1>
+		</div>
 
+		<div id="info-area" class="pure-u-1">
+			<h2>How many kids should be in each activity?</h2>
+			<h4>Total kids: <span id="total">?</span> &nbsp; &mdash; &nbsp; Spots available: <span id="spots">?</span></h4>
+
+			<form class="pure-form pure-form-aligned">
+				<div class="pure-g">
+					<div class="pure-u-1-2">
+						<fieldset>
+
+						</fieldset>
+					</div>
+					<div class="pure-u-1-2">
+						<fieldset>
+
+						</fieldset>
+					</div>
+				</div>
+			</form>
+		</div>
+
+		<div id="save-holder" class="pure-u-1">
+			<button class="pure-button" id="save">Save File</button>
+		</div>
+
+	</div>
 </body>
 
 <script src="file-saver.js"></script>

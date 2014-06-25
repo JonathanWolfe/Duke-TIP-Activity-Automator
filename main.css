@@ -1,7 +1,77 @@
+body {
+	background: #1f8dd6;
+	padding: 5em 0;
+	color: #fff;
+}
+
+.pure-button {
+	color: #fff;
+	border: 2px solid #fff;
+	border-radius: 4px;
+	text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
 #drop {
-	height: 200px;
-	border: 2px solid #555;
+	margin: 0 2em 2em;
+	padding: 1.5em 1em;
+	border: 5px solid #fff;
+	border-radius: 10px;
 	text-align: center;
-	font-size: 2em;
-	line-height: 190px;
+}
+#drop h1 {
+	font-size: 2.5em;
+}
+
+#info-area {
+	background: #fff;
+	margin: 2em 0;
+	color: #333;
+	padding: 2em 1em;
+}
+#info-area h2, h4 {
+	text-align: center;
+}
+#info-area #spots {
+	color: #2c8644;
+}
+#info-area label {
+	width: calc(70% - 5em);
+}
+#info-area input {
+	width: 5em;
+	text-align: center;
+}
+
+#save-holder {
+	padding: 2em 1em;
+}
+#save {
+	display: block;
+	position: relative;
+	width: 80%;
+	font-size: 1.5em;
+	line-height: 1.5em;
+	margin: 0px auto;
+	background: #1cba41;
+}
+#save:before {
+	pointer-events: none;
+	position: absolute;
+	z-index: -1;
+	content: '';
+	top: 100%;
+	left: 5%;
+	height: 10px;
+	width: 90%;
+	opacity: 0;
+	background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 80%);
+	transition-duration: 0.3s;
+	transition-property: transform, opacity;
+}
+#save:hover {
+	transform: translateY(-5px);
+}
+#save:hover:before {
+	opacity: 1;
+	transform: translateY(5px);
 }

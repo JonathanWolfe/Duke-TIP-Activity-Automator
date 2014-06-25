@@ -1,6 +1,47 @@
 var rABS = typeof FileReader !== "undefined" && typeof FileReader.prototype !== "undefined" && typeof FileReader.prototype.readAsBinaryString !== "undefined",
 	drop = document.getElementById('drop'),
-	XLSX = window.XLSX;
+	XLSX = window.XLSX,
+	output,
+	to_sort = [],
+	activity_names = [];
+
+// Randomize array element order in-place. Using Fisher-Yates shuffle algorithm.
+function shuffle(array) {
+	var m = array.length,
+		t, i;
+
+	// While there remain elements to shuffleâ€¦
+	while (m) {
+
+		// Pick a remaining elementâ€¦
+		i = Math.floor(Math.random() * (m--));
+
+		// And swap it with the current element.
+		t = array[m];
+		array[m] = array[i];
+		array[i] = t;
+	}
+
+	return array;
+}
+
+function count_spots() {
+
+	var span = document.querySelector('#info-area #spots'),
+		inputs = document.querySelectorAll('#info-area input'),
+		spots = 0,
+		kids = parseFloat(document.querySelector('#info-area #total').innerHTML, 10);
+
+	Array.prototype.forEach.call(inputs, function (input) {
+		spots = spots + parseFloat(input.value, 10);
+	});
+
+	if (spots > kids || spots < kids) {
+		span.innerHTML = "<span style='color: red'>" + spots + "</span>";
+	} else {
+		span.innerHTML = spots;
+	}
+}
 
 function fixdata(data) {
 	var o = "",
@@ -61,11 +102,9 @@ function sheet_from_array_of_arrays(data) {
 
 			if (typeof cell.v === 'number') {
 				cell.t = 'n';
-			}
-			else if (typeof cell.v === 'boolean') {
+			} else if (typeof cell.v === 'boolean') {
 				cell.t = 'b';
-			}
-			else if (cell.v instanceof Date) {
+			} else if (cell.v instanceof Date) {
 				cell.t = 'n';
 				cell.z = XLSX.SSF._table[14];
 				cell.v = datenum(cell.v);
@@ -81,15 +120,13 @@ function sheet_from_array_of_arrays(data) {
 }
 
 function process_wb(wb) {
-	var output = wb_data(wb),
-		to_sort = [],
-		activity_names = [],
-		limits = [30, 24, 32, 32, 25],
-		final_sort = [],
-		new_sheet_array = [];
+	var fieldsets = document.querySelectorAll('#info-area fieldset');
+	
+	output = wb_data(wb);
 
 	console.log("output:", output);
 
+	// Make sortable arrays
 	output[Object.keys(output)[0]].forEach(function (item, index) {
 		var temp_arr = [],
 			cloned_item = JSON.parse(JSON.stringify(item));
@@ -107,24 +144,71 @@ function process_wb(wb) {
 		if (temp_arr.length !== 0) {
 			to_sort.push([index, temp_arr]);
 
+			// Get the activities while we're here
 			if (activity_names.length < Object.keys(cloned_item).length) {
 				activity_names = Object.keys(cloned_item);
 			}
 		}
 	});
 
+	console.log("to_sort", to_sort);
+
+	document.querySelector('#info-area h4 span').innerHTML = to_sort.length;
+
+	activity_names.forEach(function (activity, index) {
+		var fragment = document.createDocumentFragment(),
+			temp = document.createElement('div');
+
+		temp.innerHTML = '<div class="pure-control-group"><label for="activity">' + activity + '</label><input type="number" id="' + index + '" value="30"></div>';
+
+		while (temp.firstChild) {
+			fragment.appendChild(temp.firstChild);
+		}
+
+		if (index % 2 !== 0) {
+			fieldsets[0].appendChild(fragment);
+		} else {
+			fieldsets[1].appendChild(fragment);
+		}
+
+	});
+
+	count_spots();
+	Array.prototype.forEach.call(document.querySelectorAll('#info-area input'), function (elem) {
+		elem.addEventListener('onchange', count_spots);
+	});
+
+}
+
+function make_wb() {
+
+	var limits = [],
+		final_sort = [],
+		new_sheet_array = [];
+
+	Array.prototype.forEach.call(document.querySelectorAll('#info-area input'), function (limit_el) {
+
+		limits[limit_el.getAttribute('id')] = parseFloat(limit_el.value, 10);
+
+	});
+
+	console.log('Limits', limits);
+
+	function sort_by_choice(a, b) {
+		return a[1][k] - b[1][k];
+	}
+	
+	// Sort said arrays
 	for (var k = 0; k < limits.length; k++) {
 
-		to_sort.sort(function (a, b) {
-			return a[1][k] - b[1][k];
-		});
+		shuffle(to_sort);
+
+		to_sort.sort(sort_by_choice);
 
 		var temp_arr = [];
 
 		while (temp_arr.length !== limits[k] && to_sort.length > 0) {
-
 			temp_arr.push(to_sort.shift());
-
 		}
 
 		final_sort[k] = temp_arr;
@@ -133,9 +217,11 @@ function process_wb(wb) {
 
 	console.log("Final sort: ", final_sort);
 
+	// Make data ready to be put in worksheet
 	for (var i = 0; i < final_sort.length; i++) {
 
 		new_sheet_array.push([activity_names[i]]);
+		new_sheet_array.push(["RC", "Last Name", "First Name"]);
 
 		final_sort[i].forEach(function (item) {
 
@@ -143,7 +229,7 @@ function process_wb(wb) {
 			// console.log("Item:", item[0]);
 			// console.log("person:", person);
 
-			new_sheet_array.push([person["RC"], person["First Name"] + ' ' + person["Last Name"]]);
+			new_sheet_array.push([person["RC"], person["Last Name"], person["First Name"]]);
 
 		});
 
@@ -152,9 +238,9 @@ function process_wb(wb) {
 	}
 
 	console.log("built sheet", new_sheet_array);
-	
+
 	function Workbook() {
-		if(!(this instanceof Workbook)) {
+		if (!(this instanceof Workbook)) {
 			return new Workbook();
 		}
 		this.SheetNames = [];
@@ -164,10 +250,10 @@ function process_wb(wb) {
 	var ws_name = Object.keys(output)[0],
 		sorted_wb = new Workbook(),
 		sorted_ws = sheet_from_array_of_arrays(new_sheet_array);
-	
+
 	sorted_wb.SheetNames.push(ws_name);
 	sorted_wb.Sheets[ws_name] = sorted_ws;
-	
+
 	var wbout = XLSX.write(sorted_wb, {
 		bookType: 'xlsx',
 		bookSST: true,
@@ -182,11 +268,18 @@ function process_wb(wb) {
 		}
 		return buf;
 	}
-	
-	saveAs(new Blob([s2ab(wbout)], {
-		type: "application/octet-stream"
-	}), "Sorted Activities.xlsx");
+
+	saveAs(
+		new Blob(
+				[s2ab(wbout)], {
+				type: "application/octet-stream"
+			}
+		),
+		"Sorted Activities.xlsx");
+
 }
+
+document.getElementById('save').addEventListener('click', make_wb);
 
 function handleDrop(e) {
 	e.stopPropagation();
@@ -212,12 +305,12 @@ function handleDrop(e) {
 		};
 		if (rABS) {
 			reader.readAsBinaryString(f);
-		}
-		else {
+		} else {
 			reader.readAsArrayBuffer(f);
 		}
 	}
 }
+
 function handleDragover(e) {
 	e.stopPropagation();
 	e.preventDefault();
