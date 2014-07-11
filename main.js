@@ -28,7 +28,7 @@ function shuffle(array) {
 function count_spots() {
 
 	var span = document.querySelector('#info-area #spots'),
-		inputs = document.querySelectorAll('#info-area input'),
+		inputs = document.querySelectorAll('#info-area .pure-control-group input'),
 		spots = 0,
 		kids = parseFloat(document.querySelector('#info-area #total').innerHTML, 10);
 
@@ -41,6 +41,7 @@ function count_spots() {
 	} else {
 		span.innerHTML = spots;
 	}
+	
 }
 
 function fixdata(data) {
@@ -121,7 +122,7 @@ function sheet_from_array_of_arrays(data) {
 
 function process_wb(wb) {
 	var fieldsets = document.querySelectorAll('#info-area fieldset');
-	
+
 	output = wb_data(wb);
 
 	console.log("output:", output);
@@ -174,16 +175,18 @@ function process_wb(wb) {
 	});
 
 	count_spots();
+	
+	document.getElementById('save').addEventListener('click', make_wb);
 
 }
 
 function make_wb() {
 
 	var limits = [],
-		final_sort = [],
-		new_sheet_array = [];
+		final_sort,
+		new_sheet_array;
 
-	Array.prototype.forEach.call(document.querySelectorAll('#info-area input'), function (limit_el) {
+	Array.prototype.forEach.call(document.querySelectorAll('#info-area .pure-control-group input'), function (limit_el) {
 
 		limits[limit_el.getAttribute('id')] = parseFloat(limit_el.value, 10);
 
@@ -191,51 +194,98 @@ function make_wb() {
 
 	console.log('Limits', limits);
 
-	function sort_by_choice(a, b) {
-		return a[1][k] - b[1][k];
-	}
-	
-	// Sort said arrays
-	for (var k = 0; k < limits.length; k++) {
-
-		shuffle(to_sort);
-
-		to_sort.sort(sort_by_choice);
-
-		var temp_arr = [];
-
-		while (temp_arr.length !== limits[k] && to_sort.length > 0) {
-			temp_arr.push(to_sort.shift());
+	function sort_arrays(filter){
+		
+		var the_arrays = to_sort.slice(0),
+			filtered = (typeof(filter) != "undefined" && filter !== null) ? true : false;
+		
+		final_sort = [];
+		
+		function sort_by_choice(a, b) {
+			return a[1][k] - b[1][k];
 		}
 
-		final_sort[k] = temp_arr;
+		// Sort said arrays
+		for (var k = 0; k < limits.length; k++) {
 
+			the_arrays = shuffle(the_arrays);
+
+			the_arrays.sort(sort_by_choice);
+
+			var temp_arr = [];
+
+			while (temp_arr.length !== limits[k] && the_arrays.length > 0) {
+				if(!filtered){
+					temp_arr.push(the_arrays.shift()[0]);
+				}
+				else {
+					if(filter[k].indexOf(the_arrays[0][0]) === -1 || the_arrays.length <= limits[k]) {
+						temp_arr.push(the_arrays.shift()[0]);
+					}
+					else {
+						the_arrays.push(the_arrays.shift());
+					}
+				}
+			}
+
+			final_sort[k] = temp_arr;
+			console.log('finished sorting');
+		}
+		
 	}
-
+	
+	sort_arrays();
 	console.log("Final sort: ", final_sort);
 
-	// Make data ready to be put in worksheet
-	for (var i = 0; i < final_sort.length; i++) {
+	function prepare_sheet() {
+		
+		new_sheet_array = [];
+		
+		for (var i = 0; i < final_sort.length; i++) {
 
-		new_sheet_array.push([activity_names[i]]);
-		new_sheet_array.push(["RC", "Last Name", "First Name"]);
+			new_sheet_array.push([activity_names[i]]);
+			new_sheet_array.push(["RC", "Last Name", "First Name"]);
 
-		final_sort[i].forEach(function (item) {
+			final_sort[i].forEach(function(item) {
 
-			var person = output[Object.keys(output)[0]][item[0]];
-			// console.log("Item:", item[0]);
-			// console.log("person:", person);
+				var person = output[Object.keys(output)[0]][item];
+				// console.log("Item:", item);
+				// console.log("person:", person);
 
-			new_sheet_array.push([person["RC"], person["Last Name"], person["First Name"]]);
+				new_sheet_array.push([person["RC"], person["Last Name"], person["First Name"]]);
 
-		});
+			});
 
-		new_sheet_array.push([null]);
+			new_sheet_array.push([null]);
 
+		}
+		
 	}
-
+	
+	prepare_sheet();
 	console.log("built sheet", new_sheet_array);
 
+	save_wb('sort activities', new_sheet_array);
+	
+	if(document.querySelector('#info-area #tipstar').checked){
+		
+		var last_sort = final_sort.slice(0); console.log('last_sort', final_sort);
+		
+		console.log('started sorting next round');
+		sort_arrays(last_sort);
+		
+		console.log('preparing sheet 2');
+		prepare_sheet();
+		
+		console.log('saving sheet 2');
+		save_wb('sort activies 2', new_sheet_array);
+		
+	}
+
+}
+
+function save_wb(filename, sheet_array) {
+	
 	function Workbook() {
 		if (!(this instanceof Workbook)) {
 			return new Workbook();
@@ -246,7 +296,7 @@ function make_wb() {
 
 	var ws_name = Object.keys(output)[0],
 		sorted_wb = new Workbook(),
-		sorted_ws = sheet_from_array_of_arrays(new_sheet_array);
+		sorted_ws = sheet_from_array_of_arrays(sheet_array);
 
 	sorted_wb.SheetNames.push(ws_name);
 	sorted_wb.Sheets[ws_name] = sorted_ws;
@@ -265,17 +315,17 @@ function make_wb() {
 		}
 		return buf;
 	}
-	
+
 	saveAs(
 		new Blob(
 				[s2ab(wbout)], {
 				type: "application/octet-stream"
 			}
 		),
-		"Sorted Activities.xlsx");
+		filename+".xlsx"
+	);
+	
 }
-
-document.getElementById('save').addEventListener('click', make_wb);
 
 function handleDrop(e) {
 	e.stopPropagation();

@@ -41,6 +41,9 @@ body {
 	width: 5em;
 	text-align: center;
 }
+#info-area .tipstar-wrap {
+	text-align: center;
+}
 
 #save-holder {
 	padding: 2em 1em;
